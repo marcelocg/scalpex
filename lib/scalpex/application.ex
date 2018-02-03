@@ -5,9 +5,9 @@ defmodule Scalpex.Application do
   
   use Application
 
-  def start(_type, _args) do
-    IO.puts("Start")
-    children = [ {Scalpex.Trader, []} ]
+  def start(_type, args) do
+    IO.puts("Application started with args: #{args}")
+    children = [ {Scalpex.Trader, args} ]
 
     Supervisor.start_link(children, strategy: :one_for_one)
   end
