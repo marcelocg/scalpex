@@ -38,6 +38,8 @@ defmodule Scalpex do
 
   def process(env) do
     IO.puts("Process(#{env})")
-    Scalpex.Application.start(:normal, Application.get_env( :APP_NAME, env ))
+    exchange = Scalpex.Trader.start_link
+    IO.puts(inspect exchange)
+    # Scalpex.Application.start(:normal, Application.get_env( :scalpex, env ))
   end  
 end
