@@ -2,22 +2,52 @@ defmodule Scalpex.Trader do
   use WebSockex
   require Logger
   require Record
+  alias Scalpex.Messages
 
-  def start_link(opts \\ []) do
-    Logger.info "Trader start_link"
-    {:ok, pid} = WebSockex.start_link("wss://api_testnet.blinktrade.com/trade/", __MODULE__, %Scalpex.State{}, opts)
-    Logger.info "WebSockEx PID=#{inspect pid} SelfPID=#{inspect self()}"
-    {:ok, pid}
-  end
-
-  def handle_connect(conn, state) do
-    Logger.info("Connected! Conn= #{inspect conn} State= #{inspect state}")
-    {:ok, state}
+  def startup(opts \\ []) do
+    start_link(opts)
+    |> login
   end
   
-  def handle_frame({type, msg}, state) do
-    Logger.info "Received Message - Type: #{inspect type}\nMessage: #{msg}\nState: #{state.env}"
-    
+  def start_link(opts \\ []) do
+    Logger.info "[StartLink] Trader start_link"
+    WebSockex.start_link("wss://api_testnet.blinktrade.com/trade/", __MODULE__, %Scalpex.State{}, opts)
+    |> after_connect
+  end
+  
+  def login({client, state}) do
+    WebSockex.send_frame(client, Messages.login(state))
+    {client, state}
+  end
+  
+  defp after_connect(result) do
+    case result do
+      {:error, %WebSockex.ConnError{original: reason}} ->
+        Logger.info "Could not connect to the exchange. Reason: #{reason}"
+        {:error, reason}
+
+      {:ok, client} ->
+        {_, state} = WebSockex.Utils.send(client, {:ping, %{%Scalpex.State{} | client: client}})
+        start_heartbeat_generator(client)
+        {client, state}
+    end
+  end
+
+  def start_heartbeat_generator(client) do
+    :timer.apply_interval(25_000, __MODULE__, :send_heartbeat, [client])
+  end
+
+  def send_heartbeat(client) do
+    Logger.info "[HeartBeat] Pulse <3"
+    WebSockex.send_frame(client, Messages.heartbeat)
+  end
+
+  #### Callbacks
+  def handle_info(msg, state) do
+    {:ok, %{state | client: elem(msg, 1).client}}
+  end
+
+  def handle_frame({_type, msg}, state) do
     case Poison.decode(msg) do
       {:error, error} ->
         Logger.debug(inspect msg)
@@ -28,13 +58,18 @@ defmodule Scalpex.Trader do
   end
 
   def handle_cast({:send, {type, msg} = frame}, state) do
-    Logger.info "Sending #{type} frame with payload: #{msg}"
+    Logger.info "[HandleCast] Sending #{type} frame with payload: #{msg}"
     {:reply, frame, state}
   end
 
-  # Initial HeartBeat 
+  # Initial HeartBeat
   defp process_msg(%{"MsgType" => "0"} = msg, state) do
-    Logger.info "Received initial HeartBeat - #{inspect msg}"
     {:ok, %{state | session_id: msg["SessionID"]}}
   end
+  # Logged in
+  defp process_msg(%{"MsgType" => "BF"} = msg, state) do
+    Logger.info "Logged in as #{msg["Username"]}"
+    {:ok, %{state | user_id: msg["UserID"]}}
+  end
+  
 end

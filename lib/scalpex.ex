@@ -4,8 +4,10 @@ defmodule Scalpex do
 
   A scalping trader bot for BitCoin BlinkTrade platform based exchanges.
   """
+  require Logger
+
   def main(argv) do
-    IO.puts("Main")
+    Logger.info "Scalpex initiating..."
     argv
     |> parse_args
     |> process
@@ -37,9 +39,7 @@ defmodule Scalpex do
   end
 
   def process(env) do
-    IO.puts("Process(#{env})")
-    exchange = Scalpex.Trader.start_link
-    IO.puts(inspect exchange)
-    # Scalpex.Application.start(:normal, Application.get_env( :scalpex, env ))
+    Logger.info "Starting the trader in the #{env} environment..."
+    exchange = Scalpex.Trader.startup
   end  
 end
