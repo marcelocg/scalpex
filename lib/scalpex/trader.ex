@@ -69,7 +69,15 @@ defmodule Scalpex.Trader do
   # Logged in
   defp process_msg(%{"MsgType" => "BF"} = msg, state) do
     Logger.info "Logged in as #{msg["Username"]}"
-    {:ok, %{state | user_id: msg["UserID"]}}
+    state = %{state | user_id: msg["UserID"], last_req: msg["UserReqID"]}
+    {:reply, Messages.order_book_subscription(state), state}
+  end
+  # Full Order Book
+  defp process_msg(%{"MsgType" => "W"} = msg, state) do
+    Logger.info "Received Full Order Book #{inspect msg}"
+    Logger.info "State is #{inspect state}"
+    state = %{state | last_req: msg["MDReqID"]}
+    {:ok, state}
   end
   
 end
