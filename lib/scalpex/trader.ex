@@ -11,7 +11,7 @@ defmodule Scalpex.Trader do
   
   def start_link(opts \\ []) do
     Logger.info "[StartLink] Trader start_link"
-    WebSockex.start_link("wss://api_testnet.blinktrade.com/trade/", __MODULE__, %Scalpex.State{}, opts)
+    WebSockex.start_link(Application.get_env( :scalpex, :APIUrl ), __MODULE__, %Scalpex.State{}, opts)
     |> after_connect
   end
   
@@ -77,6 +77,22 @@ defmodule Scalpex.Trader do
     Logger.info "Received Full Order Book #{inspect msg}"
     Logger.info "State is #{inspect state}"
     state = %{state | last_req: msg["MDReqID"]}
+    {:ok, state}
+  end
+  # Incremental Order Book
+  defp process_msg(%{"MsgType" => "X"} = msg, state) do
+    Logger.info "Received Full Order Book #{inspect msg}"
+    Logger.info "State is #{inspect state}"
+    state = %{state | last_req: msg["MDReqID"]}
+    {:ok, state}
+  end
+  # Undocumented messages, also unimplemented in the official client JS SDK 
+  defp process_msg(%{"MsgType" => "U40"} = _msg, state) do
+    Logger.warn "Received U40 message!"
+    {:ok, state}
+  end
+  defp process_msg(%{"MsgType" => "U23"} = _msg, state) do
+    Logger.warn "Received U23 message!"
     {:ok, state}
   end
   
