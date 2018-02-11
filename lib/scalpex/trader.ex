@@ -70,6 +70,14 @@ defmodule Scalpex.Trader do
   defp process_msg(%{"MsgType" => "BF"} = msg, state) do
     Logger.info "Logged in as #{msg["Username"]}"
     state = %{state | user_id: msg["UserID"], last_req: msg["UserReqID"]}
+    {:reply, Messages.balance(state), state}
+  end
+  # Received Balance
+  defp process_msg(%{"MsgType" => "U3"} = msg, state) do
+    Logger.info "Current balance is: #{inspect msg}"
+    broker_balance = msg[Application.get_env(:scalpex, :APIBroker)]
+    fiat_symbol = Application.get_env(:scalpex, :APIFiat)
+    state = %{state | last_req: msg["BalanceReqID"], fiat: broker_balance[fiat_symbol], btc: broker_balance["BTC"]}
     {:reply, Messages.order_book_subscription(state), state}
   end
   # Full Order Book

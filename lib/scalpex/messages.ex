@@ -28,6 +28,17 @@ defmodule Scalpex.Messages do
   end
 
   @doc """
+  Creates a balance request message
+  """
+  def balance(state) do
+    {:text, 
+      %{MsgType: "U2",
+        BalanceReqID: state.last_req + 1}
+      |> Poison.encode!
+    }        
+  end
+
+  @doc """
   Creates a login request message
 
   https://blinktrade.com/docs/#authentication
