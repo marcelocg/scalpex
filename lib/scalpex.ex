@@ -10,7 +10,6 @@ defmodule Scalpex do
     Logger.info "Scalpex initiating..."
     argv
     |> parse_args
-    |> process
   end
 
   @doc """
@@ -36,7 +35,7 @@ defmodule Scalpex do
   end
 
   def process do
-    Logger.info "Starting the trader in the #{env} environment..."
-    exchange = Scalpex.Trader.startup
+    Logger.info "Starting the trader in the #{Mix.env} environment..."
+    Scalpex.Trader.startup
   end  
 end
