@@ -10,8 +10,8 @@ defmodule Scalpex.Messages do
   MDReqID                  Request ID
   SubscriptionRequestType	 “1” = Subscribe, “2” = Unsubscribe
   MarketDepth              “0” = Full Book, “1” = Top of Book
-  MDUpdateType             “0” = Full Refresh, “1” = Incremental RefreshRefresh
   MDEntryTypes             array(string)	“0” = Bid, “1” = Offer, “2” = Trade
+  MDUpdateType             “0” = Full Refresh, “1” = Incremental RefreshRefresh
   Instruments	             Array with the symbols that you want to subscribe e.g.: [‘BTCBRL']
   """
   def order_book_subscription(state) do
@@ -20,8 +20,8 @@ defmodule Scalpex.Messages do
         MDReqID: state.last_req + 1,
         SubscriptionRequestType: 1,
         MarketDepth: 1,
-        MDUpdateType: 0,
         MDEntryTypes: ["0", "1"],
+        MDUpdateType: 1,
         Instruments: ["BTCBRL"]}
       |> Poison.encode!
     }    
@@ -43,7 +43,7 @@ defmodule Scalpex.Messages do
     {:text, 
       %{MsgType: "BE",
         UserReqID: state.last_req + 1,
-        BrokerID: broker(state.env),
+        BrokerID: Application.get_env( :scalpex, :APIBroker ),
         Username: Application.get_env( :scalpex, :APIKey ),
         Password: Application.get_env( :scalpex, :APIPassword ),
         UserReqTyp: "1",
@@ -58,7 +58,4 @@ defmodule Scalpex.Messages do
   def heartbeat do
     {:text, Poison.encode!(%{ "MsgType" => "1", "TestReqID" => "0", "SendTime" => System.system_time(:second)}) }
   end
-
-  defp broker(:test), do: 5 # BlinkTrade Testnet
-  defp broker(:prod), do: 4 # FoxBit
 end
