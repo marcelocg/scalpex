@@ -4,15 +4,15 @@ defmodule Scalpex.Trader do
   require Record
   alias Scalpex.Messages
 
-  def startup(env) do
-    start_link([env: env])
+  def startup() do
+    start_link()
     |> login
   end
   
   def start_link(opts \\ []) do
     Logger.info "[StartLink] Trader start_link - OPTS: #{inspect opts}"
     WebSockex.start_link(Application.get_env( :scalpex, :APIUrl ), __MODULE__, %Scalpex.State{}, opts)
-    |> after_connect(opts[:env])
+    |> after_connect
   end
   
   def login({client, state}) do
@@ -20,14 +20,14 @@ defmodule Scalpex.Trader do
     {client, state}
   end
   
-  defp after_connect(result, env) do
+  defp after_connect(result) do
     case result do
       {:error, %WebSockex.ConnError{original: reason}} ->
         Logger.info "Could not connect to the exchange. Reason: #{reason}"
         {:error, reason}
 
       {:ok, client} ->
-        {_, state} = WebSockex.Utils.send(client, {:ping, %{%Scalpex.State{} | client: client, env: env}})
+        {_, state} = WebSockex.Utils.send(client, {:ping, %{%Scalpex.State{} | client: client}})
         start_heartbeat_generator(client)
         {client, state}
     end

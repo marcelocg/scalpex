@@ -23,23 +23,20 @@ defmodule Scalpex do
                                      aliases:  [h: :help, p: :production])
 
     case parse do
-      {[help: true], _, _} -> :help
-
-      {[production: true], _, _} -> :prod
-
-      _ -> :dev
+      {[help: true], _, _} -> help()
+      _ -> process()
     end
   end
 
-  def process(:help) do
+  def help do
     IO.puts """
     usage: scalpex [ -p | -h ]
     """
     System.halt(0)
   end
 
-  def process(env) do
+  def process do
     Logger.info "Starting the trader in the #{env} environment..."
-    exchange = Scalpex.Trader.startup(env)
+    exchange = Scalpex.Trader.startup
   end  
 end
