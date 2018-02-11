@@ -25,9 +25,9 @@ defmodule Scalpex do
     case parse do
       {[help: true], _, _} -> :help
 
-      {[production: true], _, _} -> :production
+      {[production: true], _, _} -> :prod
 
-      _ -> :test
+      _ -> :dev
     end
   end
 
@@ -40,6 +40,6 @@ defmodule Scalpex do
 
   def process(env) do
     Logger.info "Starting the trader in the #{env} environment..."
-    exchange = Scalpex.Trader.startup
+    exchange = Scalpex.Trader.startup(env)
   end  
 end

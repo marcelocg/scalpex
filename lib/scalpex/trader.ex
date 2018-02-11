@@ -4,15 +4,15 @@ defmodule Scalpex.Trader do
   require Record
   alias Scalpex.Messages
 
-  def startup(opts \\ []) do
-    start_link(opts)
+  def startup(env) do
+    start_link([env: env])
     |> login
   end
   
   def start_link(opts \\ []) do
-    Logger.info "[StartLink] Trader start_link"
+    Logger.info "[StartLink] Trader start_link - OPTS: #{inspect opts}"
     WebSockex.start_link(Application.get_env( :scalpex, :APIUrl ), __MODULE__, %Scalpex.State{}, opts)
-    |> after_connect
+    |> after_connect(opts[:env])
   end
   
   def login({client, state}) do
@@ -20,14 +20,14 @@ defmodule Scalpex.Trader do
     {client, state}
   end
   
-  defp after_connect(result) do
+  defp after_connect(result, env) do
     case result do
       {:error, %WebSockex.ConnError{original: reason}} ->
         Logger.info "Could not connect to the exchange. Reason: #{reason}"
         {:error, reason}
 
       {:ok, client} ->
-        {_, state} = WebSockex.Utils.send(client, {:ping, %{%Scalpex.State{} | client: client}})
+        {_, state} = WebSockex.Utils.send(client, {:ping, %{%Scalpex.State{} | client: client, env: env}})
         start_heartbeat_generator(client)
         {client, state}
     end
@@ -75,14 +75,12 @@ defmodule Scalpex.Trader do
   # Full Order Book
   defp process_msg(%{"MsgType" => "W"} = msg, state) do
     Logger.info "Received Full Order Book #{inspect msg}"
-    Logger.info "State is #{inspect state}"
     state = %{state | last_req: msg["MDReqID"]}
     {:ok, state}
   end
   # Incremental Order Book
   defp process_msg(%{"MsgType" => "X"} = msg, state) do
-    Logger.info "Received Full Order Book #{inspect msg}"
-    Logger.info "State is #{inspect state}"
+    Logger.info "Order Book Update#{inspect msg}"
     state = %{state | last_req: msg["MDReqID"]}
     {:ok, state}
   end
