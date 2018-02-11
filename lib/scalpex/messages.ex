@@ -19,7 +19,7 @@ defmodule Scalpex.Messages do
       %{MsgType: "V",
         MDReqID: state.last_req + 1,
         SubscriptionRequestType: 1,
-        MarketDepth: 1,
+        MarketDepth: 2,
         MDEntryTypes: ["0", "1"],
         MDUpdateType: 1,
         Instruments: ["BTCBRL"]}
