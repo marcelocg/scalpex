@@ -69,4 +69,14 @@ defmodule Scalpex.Messages do
   def heartbeat do
     {:text, Poison.encode!(%{ "MsgType" => "1", "TestReqID" => "0", "SendTime" => System.system_time(:second)}) }
   end
+
+  @doc """
+  Extracts values for ask and bid from the top of the Order Book
+  """
+  def extract_top_orders(msg) do
+    msg
+    |> Map.get("MDFullGrp")
+    |> Enum.filter(fn m -> Map.get(m, "MDEntryPositionNo") == 1 end)
+    |> Enum.map(fn a -> [Map.get(a, "MDEntryType"), Map.get(a, "MDEntryPx")] end)
+  end
 end
