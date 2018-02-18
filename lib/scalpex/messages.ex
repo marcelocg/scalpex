@@ -89,6 +89,14 @@ defmodule Scalpex.Messages do
     msg
     |> Map.get("MDFullGrp")
     |> Enum.filter(fn m -> Map.get(m, "MDEntryPositionNo") == 1 end)
-    |> Enum.map(fn a -> [Map.get(a, "MDEntryType"), Map.get(a, "MDEntryPx")] end)
+    |> Enum.map(fn a -> eval_order_data(Map.get(a, "MDEntryType"), Map.get(a, "MDEntryPx")) end)
+    |> List.flatten
+  end
+
+  def eval_order_data(order_type, order_value) do
+    case order_type do
+      "0" -> [bid: order_value]
+      "1" -> [ask: order_value]
+    end
   end
 end

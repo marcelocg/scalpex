@@ -9,7 +9,7 @@ defmodule Scalpex.MessagesTest do
       state: %Scalpex.State{},
 
       U2: {:text, ~s({"MsgType":"U2","BalanceReqID":1})},
-      V: {:text, ~s({"SubscriptionRequestType":1,"MsgType":"V","MarketDepth":2,"MDUpdateType":1,"MDReqID":1,"MDEntryTypes":["0","1"],"Instruments":["BTCBRL"]})},
+      V:  {:text, ~s({"SubscriptionRequestType":1,"MsgType":"V","MarketDepth":2,"MDUpdateType":1,"MDReqID":1,"MDEntryTypes":["0","1"],"Instruments":["BTCBRL"]})},
       BE: {:text, ~s({"Username":"#{Application.get_env( :scalpex, :APIKey )}","UserReqTyp":"1","UserReqID":1,"Password":"#{Application.get_env( :scalpex, :APIPassword )}","MsgType":"BE","FingerPrint":"35833900445b198864d8e9a548c277cb49ad8fce51d7a1e4a088252eacd4bc8d","BrokerID":"#{Application.get_env( :scalpex, :APIBroker )}"})},
       
       order_book: %{"MDFullGrp" => [
@@ -66,8 +66,13 @@ defmodule Scalpex.MessagesTest do
     ]
   end
 
+  test "Correctly interpret the ask and bid values in the order book" do
+    assert Scalpex.Messages.eval_order_data("0", 1) == [bid: 1]
+    assert Scalpex.Messages.eval_order_data("1", 2) == [ask: 2]
+  end
+
   test "Extract the price of the orders at the top of the Order Book", fixture do
-    assert Scalpex.Messages.extract_top_orders(fixture.order_book) == [["0", 3350020000000], ["1", 3379999000000]]
+    assert Scalpex.Messages.extract_top_orders(fixture.order_book) == [bid: 3350020000000, ask: 3379999000000]
   end
 
   test "Creates a Login request message", fixture do
