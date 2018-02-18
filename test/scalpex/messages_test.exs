@@ -8,9 +8,9 @@ defmodule Scalpex.MessagesTest do
     [
       state: %Scalpex.State{},
 
-      U2: {:text, "{\"MsgType\":\"U2\",\"BalanceReqID\":1}"},
-      V: {:text,  "{\"SubscriptionRequestType\":1,\"MsgType\":\"V\",\"MarketDepth\":2,\"MDUpdateType\":1,\"MDReqID\":1,\"MDEntryTypes\":[\"0\",\"1\"],\"Instruments\":[\"BTCBRL\"]}"},
-      BE: {:text, "{\"Username\":\"#{Application.get_env( :scalpex, :APIKey )}\",\"UserReqTyp\":\"1\",\"UserReqID\":1,\"Password\":\"#{Application.get_env( :scalpex, :APIPassword )}\",\"MsgType\":\"BE\",\"FingerPrint\":\"35833900445b198864d8e9a548c277cb49ad8fce51d7a1e4a088252eacd4bc8d\",\"BrokerID\":\"#{Application.get_env( :scalpex, :APIBroker )}\"}"},
+      U2: {:text, ~s({"MsgType":"U2","BalanceReqID":1})},
+      V: {:text, ~s({"SubscriptionRequestType":1,"MsgType":"V","MarketDepth":2,"MDUpdateType":1,"MDReqID":1,"MDEntryTypes":["0","1"],"Instruments":["BTCBRL"]})},
+      BE: {:text, ~s({"Username":"#{Application.get_env( :scalpex, :APIKey )}","UserReqTyp":"1","UserReqID":1,"Password":"#{Application.get_env( :scalpex, :APIPassword )}","MsgType":"BE","FingerPrint":"35833900445b198864d8e9a548c277cb49ad8fce51d7a1e4a088252eacd4bc8d","BrokerID":"#{Application.get_env( :scalpex, :APIBroker )}"})},
       
       order_book: %{"MDFullGrp" => [
                     %{"Broker" => "foxbit", 
