@@ -2,7 +2,19 @@ defmodule Scalpex.Messages do
   @moduledoc """
   This module provides functions for creating message payloads of the various message types as specified by the BlikTrade API
   """
-  
+
+  @doc """
+    Generates new message identifier
+    
+    ## Example
+    iex> Scalpex.Messages.new_message_id(%Scalpex.State{last_req: 1})
+    2
+
+  """
+  def new_message_id(state) do
+    state.last_req + 1
+  end
+
   @doc """
   Creates an order book subscription request message
 
@@ -17,7 +29,7 @@ defmodule Scalpex.Messages do
   def order_book_subscription(state) do
     {:text, 
       %{MsgType: "V",
-        MDReqID: state.last_req + 1,
+        MDReqID: new_message_id(state),
         SubscriptionRequestType: 1,
         MarketDepth: 2,
         MDEntryTypes: ["0", "1"],
@@ -33,7 +45,7 @@ defmodule Scalpex.Messages do
   def balance(state) do
     {:text, 
       %{MsgType: "U2",
-        BalanceReqID: state.last_req + 1}
+        BalanceReqID: new_message_id(state)}
       |> Poison.encode!
     }        
   end
@@ -53,7 +65,7 @@ defmodule Scalpex.Messages do
   def login(state) do
     {:text, 
       %{MsgType: "BE",
-        UserReqID: state.last_req + 1,
+        UserReqID: new_message_id(state),
         BrokerID: Application.get_env( :scalpex, :APIBroker ),
         Username: Application.get_env( :scalpex, :APIKey ),
         Password: Application.get_env( :scalpex, :APIPassword ),
