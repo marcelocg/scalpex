@@ -1,9 +1,12 @@
 defmodule Scalpex.Util do
 
   def fingerprint do
-    :crypto.hash(:sha256, info())
-    |> Base.encode16
-    |> String.downcase
+    case Mix.env do
+      :prod -> :crypto.hash(:sha256, info())
+               |> Base.encode16
+               |> String.downcase
+      _ -> "35833900445b198864d8e9a548c277cb49ad8fce51d7a1e4a088252eacd4bc8d"
+    end
   end
   
   def info do

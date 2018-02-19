@@ -16,6 +16,34 @@ defmodule Scalpex.Messages do
   end
 
   @doc """
+  Creates an order request message
+
+  https://blinktrade.com/docs/#subscribe-to-orderbook
+MsgType     “D”
+ClOrdID     Unique identifier for Order as assigned by you
+Symbol      The symbol being traded, e.g. "BTCUSD", "BTCBRL" etc
+Side        “1” = Buy, “2” = Sell
+OrdType     “2” = Limited
+Price       Price in satoshis
+OrderQty    Quantity in satoshis
+BrokerID    Id of the broker where we're trading on
+  """
+  def buy_order(state) do
+    {:text, 
+      %{MsgType: "D",
+        ClOrdID: new_message_id(state),
+        Symbol: "BTCBRL",
+        Side: 1,
+        OrdType: 2,
+        Price: state.current_buy_price,
+        OrderQty: state.current_buy_qty,
+        BrokerID: Application.get_env( :scalpex, :APIBroker )}
+      |> Poison.encode!
+    }    
+
+  end
+
+  @doc """
   Creates an order book subscription request message
 
   https://blinktrade.com/docs/#subscribe-to-orderbook

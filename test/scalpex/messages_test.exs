@@ -5,12 +5,14 @@ defmodule Scalpex.MessagesTest do
   # messages are supposed to be Poison-encoded, so they are escaped strings here
   # it's kind of a smell but...
   setup_all do
+    fingerprint = "35833900445b198864d8e9a548c277cb49ad8fce51d7a1e4a088252eacd4bc8d"
     [
       state: %Scalpex.State{},
 
       U2: {:text, ~s({"MsgType":"U2","BalanceReqID":1})},
+      D:  {:text, ~s({"Symbol":"BTCBRL","Side":1,"Price":0,"OrderQty":0,"OrdType":2,"MsgType":"D","ClOrdID":1,"BrokerID":"#{Application.get_env( :scalpex, :APIBroker )}"})},
       V:  {:text, ~s({"SubscriptionRequestType":1,"MsgType":"V","MarketDepth":2,"MDUpdateType":1,"MDReqID":1,"MDEntryTypes":["0","1"],"Instruments":["BTCBRL"]})},
-      BE: {:text, ~s({"Username":"#{Application.get_env( :scalpex, :APIKey )}","UserReqTyp":"1","UserReqID":1,"Password":"#{Application.get_env( :scalpex, :APIPassword )}","MsgType":"BE","FingerPrint":"35833900445b198864d8e9a548c277cb49ad8fce51d7a1e4a088252eacd4bc8d","BrokerID":"#{Application.get_env( :scalpex, :APIBroker )}"})},
+      BE: {:text, ~s({"Username":"#{Application.get_env( :scalpex, :APIKey )}","UserReqTyp":"1","UserReqID":1,"Password":"#{Application.get_env( :scalpex, :APIPassword )}","MsgType":"BE","FingerPrint":"#{fingerprint}","BrokerID":"#{Application.get_env( :scalpex, :APIBroker )}"})},
       
       order_book: %{"MDFullGrp" => [
                     %{"Broker" => "foxbit", 
@@ -85,6 +87,10 @@ defmodule Scalpex.MessagesTest do
 
   test "Creates an Order Book Subscription request message", fixture do
     assert Scalpex.Messages.order_book_subscription(fixture.state) == fixture."V"
+  end
+
+  test "Creates a Buy Order request message", fixture do
+    assert Scalpex.Messages.buy_order(fixture.state) == fixture."D"
   end
 
 end
