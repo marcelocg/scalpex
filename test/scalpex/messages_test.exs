@@ -10,7 +10,7 @@ defmodule Scalpex.MessagesTest do
       state: %Scalpex.State{},
 
       U2: {:text, ~s({"MsgType":"U2","BalanceReqID":1})},
-      D:  {:text, ~s({"Symbol":"BTCBRL","Side":1,"Price":0,"OrderQty":0,"OrdType":2,"MsgType":"D","ClOrdID":1,"BrokerID":"#{Application.get_env( :scalpex, :APIBroker )}"})},
+      D:  {:text, ~s({"Symbol":"BTCBRL","Side":"1","Price":0,"OrderQty":0,"OrdType":"2","MsgType":"D","ClOrdID":1,"BrokerID":"#{Application.get_env( :scalpex, :APIBroker )}"})},
       V:  {:text, ~s({"SubscriptionRequestType":1,"MsgType":"V","MarketDepth":2,"MDUpdateType":1,"MDReqID":1,"MDEntryTypes":["0","1"],"Instruments":["BTCBRL"]})},
       BE: {:text, ~s({"Username":"#{Application.get_env( :scalpex, :APIKey )}","UserReqTyp":"1","UserReqID":1,"Password":"#{Application.get_env( :scalpex, :APIPassword )}","MsgType":"BE","FingerPrint":"#{fingerprint}","BrokerID":"#{Application.get_env( :scalpex, :APIBroker )}"})},
       

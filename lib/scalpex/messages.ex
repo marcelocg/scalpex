@@ -33,8 +33,8 @@ BrokerID    Id of the broker where we're trading on
       %{MsgType: "D",
         ClOrdID: new_message_id(state),
         Symbol: "BTCBRL",
-        Side: 1,
-        OrdType: 2,
+        Side: "1",
+        OrdType: "2",
         Price: state.current_buy_price,
         OrderQty: state.current_buy_qty,
         BrokerID: Application.get_env( :scalpex, :APIBroker )}
