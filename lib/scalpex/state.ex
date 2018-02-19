@@ -6,5 +6,7 @@ defmodule Scalpex.State do
             client: nil, 
             last_req: 0, 
             fiat: 0, 
-            btc: 0
+            btc: 0,
+            current_buy_price: 0,
+            current_buy_qty: 0
 end

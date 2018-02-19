@@ -3,6 +3,7 @@ defmodule Scalpex.Trader do
   require Logger
   require Record
   alias Scalpex.Messages
+  alias Scalpex.State
 
   def startup() do
     start_link()
@@ -40,6 +41,32 @@ defmodule Scalpex.Trader do
   def send_heartbeat(client) do
     Logger.info "[HeartBeat] Pulse <3"
     WebSockex.send_frame(client, Messages.heartbeat)
+  end
+
+  def handle_order_book_top_update(msg, state) do
+    msg
+    |> Messages.extract_top_orders
+    |> calculate_spread
+    |> decide_action(state)
+  end
+  
+  @doc """
+  Calculates the spread between the bid and and ask values currently presented at the top of the order book
+
+  ## Examples
+    iex> Scalpex.Trader.calculate_spread([bid: 3350020000000, ask: 3379999000000])
+    0.8948901797601216
+
+  """
+  def calculate_spread([bid: bid, ask: ask]) do
+    ((ask/bid) - 1) * 100
+  end
+
+  def decide_action(spread, %State{fee: fee, min_gain: min_gain} = state) when spread > (fee + min_gain) do
+    {:reply, Messages.buy_order(state), state}
+  end
+  def decide_action(_spread, state) do
+    {:ok, state}
   end
 
   #### Callbacks
@@ -80,15 +107,15 @@ defmodule Scalpex.Trader do
     state = %{state | last_req: msg["BalanceReqID"], fiat: broker_balance[fiat_symbol], btc: broker_balance["BTC"]}
     {:reply, Messages.order_book_subscription(state), state}
   end
-  # Full Order Book
+  #Top of the Order Book
   defp process_msg(%{"MsgType" => "W"} = msg, state) do
-    Logger.info "Received Full Order Book #{inspect msg}"
+    Logger.info "Received Top of the Order Book #{inspect msg}"
     state = %{state | last_req: msg["MDReqID"]}
-    {:ok, state}
+    handle_order_book_top_update(msg, state)
   end
   # Incremental Order Book
   defp process_msg(%{"MsgType" => "X"} = msg, state) do
-    Logger.info "Order Book Update#{inspect msg}"
+    Logger.info "Order Book Update #{inspect msg}"
     state = %{state | last_req: msg["MDReqID"]}
     {:ok, state}
   end
