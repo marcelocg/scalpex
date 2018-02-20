@@ -26,7 +26,6 @@ defmodule Scalpex.Trader do
       {:error, %WebSockex.ConnError{original: reason}} ->
         Logger.info "Could not connect to the exchange. Reason: #{reason}"
         raise("Connection timeout.")
-        {:error, reason}
 
       {:ok, client} ->
         {_, state} = WebSockex.Utils.send(client, {:ping, %{%Scalpex.State{} | client: client}})
@@ -91,44 +90,49 @@ defmodule Scalpex.Trader do
     {:reply, frame, state}
   end
 
-  # Initial HeartBeat
-  defp process_msg(%{"MsgType" => "0"} = msg, state) do
+  defp process_msg(%{"MsgType" => type} = msg, state) do
+    case type do
+      "0"  -> respond_to_initial_hb(msg, state)
+      "BF" -> respond_to_login(msg, state)
+      "U3" -> respond_to_balance_received(msg, state)
+      "W"  -> respond_to_order_book_top(msg, state)
+      "X"  -> respond_to_order_book_update(msg, state)
+      _    -> respond_to_other_messages(msg, state)
+    end
+  end
+
+  defp respond_to_initial_hb(msg, state) do
     {:ok, %{state | session_id: msg["SessionID"]}}
   end
-  # Logged in
-  defp process_msg(%{"MsgType" => "BF"} = msg, state) do
+
+  defp respond_to_login(msg, state) do
     Logger.info "Logged in as #{msg["Username"]}"
     state = %{state | user_id: msg["UserID"], last_req: msg["UserReqID"]}
     {:reply, Messages.balance(state), state}
   end
-  # Received Balance
-  defp process_msg(%{"MsgType" => "U3"} = msg, state) do
+
+  defp respond_to_balance_received(msg, state) do
     Logger.info "Current balance is: #{inspect msg}"
     broker_balance = msg[Application.get_env(:scalpex, :APIBroker)]
     fiat_symbol = Application.get_env(:scalpex, :APIFiat)
     state = %{state | last_req: msg["BalanceReqID"], fiat_bal: broker_balance[fiat_symbol], btc_bal: broker_balance["BTC"]}
     {:reply, Messages.order_book_subscription(state), state}
   end
-  #Top of the Order Book
-  defp process_msg(%{"MsgType" => "W"} = msg, state) do
+
+  defp respond_to_order_book_top(msg, state) do
     Logger.info "Received Top of the Order Book #{inspect msg}"
     state = %{state | last_req: msg["MDReqID"]}
     handle_order_book_top_update(msg, state)
   end
-  # Incremental Order Book
-  defp process_msg(%{"MsgType" => "X"} = msg, state) do
+
+  defp respond_to_order_book_update(msg, state) do
     Logger.info "Order Book Update #{inspect msg}"
     state = %{state | last_req: msg["MDReqID"]}
     {:ok, state}
   end
-  # Undocumented messages, also unimplemented in the official client JS SDK 
-  defp process_msg(%{"MsgType" => "U40"} = _msg, state) do
-    Logger.warn "Received U40 message!"
+
+  defp respond_to_other_messages(%{"MsgType" => type} = _msg, state) do
+    Logger.warn "Received #{type} message!"
     {:ok, state}
-  end
-  defp process_msg(%{"MsgType" => "U23"} = _msg, state) do
-    Logger.warn "Received U23 message!"
-    {:ok, state}
-  end
-  
+  end  
 end
