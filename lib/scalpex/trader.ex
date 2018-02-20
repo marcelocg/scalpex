@@ -25,6 +25,7 @@ defmodule Scalpex.Trader do
     case result do
       {:error, %WebSockex.ConnError{original: reason}} ->
         Logger.info "Could not connect to the exchange. Reason: #{reason}"
+        raise("Connection timeout.")
         {:error, reason}
 
       {:ok, client} ->
@@ -63,6 +64,7 @@ defmodule Scalpex.Trader do
   end
 
   def decide_action(spread, %State{fee: fee, min_gain: min_gain} = state) when spread > (fee + min_gain) do
+    Logger.info "Spread: #{spread} Current threshold: #{fee + min_gain}"
     {:reply, Messages.buy_order(state), state}
   end
   def decide_action(_spread, state) do
@@ -104,7 +106,7 @@ defmodule Scalpex.Trader do
     Logger.info "Current balance is: #{inspect msg}"
     broker_balance = msg[Application.get_env(:scalpex, :APIBroker)]
     fiat_symbol = Application.get_env(:scalpex, :APIFiat)
-    state = %{state | last_req: msg["BalanceReqID"], fiat: broker_balance[fiat_symbol], btc: broker_balance["BTC"]}
+    state = %{state | last_req: msg["BalanceReqID"], fiat_bal: broker_balance[fiat_symbol], btc_bal: broker_balance["BTC"]}
     {:reply, Messages.order_book_subscription(state), state}
   end
   #Top of the Order Book
