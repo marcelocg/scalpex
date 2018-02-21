@@ -46,27 +46,59 @@ defmodule Scalpex.Trader do
   def handle_order_book_top_update(msg, state) do
     msg
     |> Messages.extract_top_orders
-    |> calculate_spread
-    |> decide_action(state)
+    |> update_current_prices(state)
+    |> update_spread
+    |> decide_action
   end
   
   @doc """
-  Calculates the spread between the bid and and ask values currently presented at the top of the order book
-
+  Updates the spread value in state data
   ## Examples
-    iex> Scalpex.Trader.calculate_spread([bid: 3350020000000, ask: 3379999000000])
-    0.8948901797601216
-
+    iex> state = %Scalpex.State{}
+    iex> state.current_bid
+    -1
+    iex> state.current_ask
+    -1
+    iex> state = Scalpex.Trader.update_current_prices([bid: 3350020000000, ask: 3379999000000], state)
+    iex> state.current_bid
+    3350020000000
+    iex> state.current_ask
+    3379999000000
   """
-  def calculate_spread([bid: bid, ask: ask]) do
+  def update_current_prices(prices, state) do
+    bid = prices[:bid] 
+    ask = prices[:ask]
+
+    state = 
+    case [bid, ask] do
+      [nil, nil] -> state
+      [bid, nil] -> %{state | current_bid: bid}
+      [nil, ask] -> %{state | current_ask: ask}
+      [bid, ask] -> %{state | current_bid: bid, current_ask: ask}
+    end
+    state
+  end
+
+  def update_spread(state) do
+    state = %{state | spread: calculate_spread(state.current_bid, state.current_ask)}
+    state
+  end
+
+  @doc """
+  Calculates the spread between the bid and and ask values currently presented at the top of the order book
+  ## Examples
+    iex> Scalpex.Trader.calculate_spread(3350020000000, 3379999000000)
+    0.8948901797601216
+  """
+  def calculate_spread(bid, ask) do
     ((ask/bid) - 1) * 100
   end
 
-  def decide_action(spread, %State{fee: fee, min_gain: min_gain} = state) when spread > (fee + min_gain) do
+  def decide_action(%State{spread: spread, fee: fee, min_gain: min_gain} = state) when spread > (fee + min_gain) do
     Logger.info "Spread: #{spread} Current threshold: #{fee + min_gain}"
     {:reply, Messages.buy_order(state), state}
   end
-  def decide_action(_spread, state) do
+  def decide_action(state) do
     {:ok, state}
   end
 
@@ -95,7 +127,7 @@ defmodule Scalpex.Trader do
       "0"  -> respond_to_initial_hb(msg, state)
       "BF" -> respond_to_login(msg, state)
       "U3" -> respond_to_balance_received(msg, state)
-      "W"  -> respond_to_order_book_top(msg, state)
+      "W"  -> respond_to_order_book_update(msg, state)
       "X"  -> respond_to_order_book_update(msg, state)
       _    -> respond_to_other_messages(msg, state)
     end
@@ -119,16 +151,11 @@ defmodule Scalpex.Trader do
     {:reply, Messages.order_book_subscription(state), state}
   end
 
-  defp respond_to_order_book_top(msg, state) do
+  defp respond_to_order_book_update(msg, state) do
     Logger.info "Received Top of the Order Book #{inspect msg}"
     state = %{state | last_req: msg["MDReqID"]}
+    Logger.info inspect state
     handle_order_book_top_update(msg, state)
-  end
-
-  defp respond_to_order_book_update(msg, state) do
-    Logger.info "Order Book Update #{inspect msg}"
-    state = %{state | last_req: msg["MDReqID"]}
-    {:ok, state}
   end
 
   defp respond_to_other_messages(%{"MsgType" => type} = _msg, state) do

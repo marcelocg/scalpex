@@ -111,20 +111,29 @@ BrokerID    Id of the broker where we're trading on
   end
 
   @doc """
-  Extracts values for ask and bid from the top of the Order Book
+  Extracts values for ask and bid from the top of the Order Book.
+  Returns [bid: <top bid value>, ask: <top ask value>]
   """
   def extract_top_orders(msg) do
-    msg
-    |> Map.get("MDFullGrp")
+    case msg do
+      %{"MDFullGrp" => orders} -> extract_prices_from(orders)
+      %{"MDIncGrp"  => orders} -> extract_prices_from(orders)
+      _ -> []
+    end
+  end
+  
+  def extract_prices_from(orders) do
+    orders
     |> Enum.filter(fn m -> Map.get(m, "MDEntryPositionNo") == 1 end)
-    |> Enum.map(fn a -> eval_order_data(Map.get(a, "MDEntryType"), Map.get(a, "MDEntryPx")) end)
+    |> Enum.map(fn a -> extract_order_data(Map.get(a, "MDEntryType"), Map.get(a, "MDEntryPx")) end)
     |> List.flatten
   end
 
-  def eval_order_data(order_type, order_value) do
+  def extract_order_data(order_type, order_value) do
     case order_type do
       "0" -> [bid: order_value]
       "1" -> [ask: order_value]
+      _   -> []
     end
   end
 end

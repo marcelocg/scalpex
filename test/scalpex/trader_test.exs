@@ -3,8 +3,10 @@ defmodule Scalpex.TraderTest do
   doctest Scalpex.Trader
 
   test "Responds correctly according to a given spread" do
-    assert {:reply, _, _} = Scalpex.Trader.decide_action(10_000, %Scalpex.State{})
-    assert {:ok, _}       = Scalpex.Trader.decide_action(0.001, %Scalpex.State{})
+    state = %Scalpex.State{}
+    assert {:reply, _, _} = Scalpex.Trader.decide_action(%{state | spread: 10_000})
+    assert {:ok, _}       = Scalpex.Trader.decide_action(%{state | spread: 0.0001})
+    assert {:ok, _}       = Scalpex.Trader.decide_action(%{state | spread: 0})
   end
 
 end
