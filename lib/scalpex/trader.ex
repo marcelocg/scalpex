@@ -64,6 +64,16 @@ defmodule Scalpex.Trader do
     3350020000000
     iex> state.current_ask
     3379999000000
+    iex> state = Scalpex.Trader.update_current_prices([bid: 3200000000000], state)
+    iex> state.current_bid
+    3200000000000
+    iex> state.current_ask
+    3379999000000
+    iex> state = Scalpex.Trader.update_current_prices([ask: 3500000000000], state)
+    iex> state.current_bid
+    3200000000000
+    iex> state.current_ask
+    3500000000000
   """
   def update_current_prices(prices, state) do
     bid = prices[:bid] 
