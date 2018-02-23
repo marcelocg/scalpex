@@ -21,7 +21,16 @@ defmodule Scalpex.Trader do
     {client, state}
   end
   
-  defp after_connect(result) do
+  @doc """
+  Called after connection succeeds, used to set the current PID as the client ID on the app state
+  ## Examples
+    iex> Scalpex.Trader.after_connect({:ok, self()})
+    {self(), %Scalpex.State{client: self()}}
+    iex> Scalpex.Trader.after_connect({:error, %WebSockex.ConnError{}})
+    ** (RuntimeError) Connection timeout.
+
+  """
+  def after_connect(result) do
     case result do
       {:error, %WebSockex.ConnError{original: reason}} ->
         Logger.info "Could not connect to the exchange. Reason: #{reason}"
@@ -52,7 +61,7 @@ defmodule Scalpex.Trader do
   end
   
   @doc """
-  Updates the spread value in state data
+  Updates current ask and bid prices in state data
   ## Examples
     iex> state = %Scalpex.State{}
     iex> state.current_bid
@@ -94,6 +103,17 @@ defmodule Scalpex.Trader do
     state
   end
 
+  @doc """
+  Updates the spread value in state data
+  ## Examples
+    iex> state = %Scalpex.State{}
+    iex> state.spread
+    0
+    iex> state = Scalpex.Trader.update_current_prices([bid: 3200000000000, ask: 3500000000000], state)
+    iex> state = Scalpex.Trader.update_spread(state)
+    iex> state.spread
+    9.375
+  """  
   def update_spread(state) do
     state = %{state | spread: calculate_spread(state.current_bid, state.current_ask)}
     state
@@ -109,6 +129,9 @@ defmodule Scalpex.Trader do
     ((ask/bid) - 1) * 100
   end
 
+  @doc """
+  Determines what will be the next action after an order book update, according to the current spread
+  """
   def decide_action(%State{spread: spread, fee: fee, min_gain: min_gain} = state) when spread > (fee + min_gain) do
     Logger.info "Spread: #{spread} Current threshold: #{fee + min_gain}"
     {:reply, Messages.buy_order(state), state}
