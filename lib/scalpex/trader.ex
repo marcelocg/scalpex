@@ -196,8 +196,16 @@ defmodule Scalpex.Trader do
     handle_order_book_top_update(msg, state)
   end
 
-  defp respond_to_other_messages(%{"MsgType" => type} = _msg, state) do
+  defp respond_to_other_messages(%{"MsgType" => type} = msg, state) do
     Logger.warn "Received #{type} message!"
-    {:ok, state}
+    Logger.info "Message: #{inspect msg}"
+    Logger.info "State: #{inspect state}"
+    Logger.info "Client: #{inspect state.client}"
+    
+    login_frame = Messages.login(state)
+    Logger.info "Login MSG: #{inspect login_frame}"
+
+    # Errors seem to cause a logoff, so...
+    {:reply, login_frame, state}
   end  
 end
