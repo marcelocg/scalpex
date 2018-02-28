@@ -140,6 +140,35 @@ defmodule Scalpex.Trader do
     {:ok, state}
   end
 
+  def do_decide(state) do
+    {spread, threshold, position, ask, bid, bought_price, fee} = get_info_from(state)
+
+    case (spread > threshold) do
+      true ->
+        case position do
+          :out -> :buy
+          :in  -> :sell
+          :open_buy  -> bid > bought_price ? :cancel : :wait
+          :open_sell -> ask < bought_price ? :cancel : :wait
+        end
+      _ ->
+        case position do
+          :out -> :wait
+          :in  -> ask >= bought_price + fee ? :sell : :wait
+          :open_buy  -> bid > bought_price ? :wait : :cancel
+          :open_sell -> ask < bought_price ? :cancel : :wait
+        end
+    end
+  end
+
+  def get_info_from(state) do
+    {state.spread, calculate_theshold(state), state.position, state.current_ask, state.current_bid, state.bought_price, state.fee}
+  end
+
+  def calculate_theshold(state) do
+    state.fee + state.min_gain
+  end
+
   #### Callbacks
   def handle_info(msg, state) do
     {:ok, %{state | client: elem(msg, 1).client}}
