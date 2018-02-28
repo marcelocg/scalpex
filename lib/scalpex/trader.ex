@@ -148,8 +148,8 @@ defmodule Scalpex.Trader do
         case position do
           :out -> :buy
           :in  -> :sell
-          :open_buy  -> if(bid > bought_price), do: :cancel, else: :wait
-          :open_sell -> if(ask < bought_price), do: :cancel, else: :wait
+          :open_buy  -> if (bid > bought_price), do: :cancel, else: :wait
+          :open_sell -> if (ask < bought_price), do: :cancel, else: :wait
         end
       _ ->
         case position do
