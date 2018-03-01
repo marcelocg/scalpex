@@ -3,7 +3,6 @@ defmodule Scalpex.Trader do
   require Logger
   require Record
   alias Scalpex.Messages
-  alias Scalpex.State
 
   def startup() do
     start_link()
@@ -132,16 +131,22 @@ defmodule Scalpex.Trader do
   @doc """
   Determines what will be the next action after an order book update, according to the current spread
   """
-  def decide_action(%State{spread: spread, fee: fee, min_gain: min_gain} = state) when spread > (fee + min_gain) do
-    Logger.info "Spread: #{spread} Current threshold: #{fee + min_gain}"
-    {:reply, Messages.buy_order(state), state}
-  end
   def decide_action(state) do
-    {:ok, state}
+    case do_decide(state) do
+      :buy    -> Logger.info "Buying..."
+                 {:reply, Messages.buy_order(state), state}
+      :sell   -> Logger.info "Selling..."
+                 {:reply, Messages.sell_order(state), state}
+      :cancel -> Logger.info "Canceling..."
+                 {:reply, Messages.cancel_order(state), state}
+      :wait   ->  Logger.info "Waiting..."
+                 {:ok, state}
+    end
   end
 
   def do_decide(state) do
     {spread, threshold, position, ask, bid, bought_price, fee} = get_info_from(state)
+    Logger.info "Spread: #{spread} Current threshold: #{threshold}"
 
     case (spread > threshold) do
       true ->
@@ -162,7 +167,7 @@ defmodule Scalpex.Trader do
   end
 
   def get_info_from(state) do
-    {state.spread, calculate_theshold(state), state.position, state.current_ask, state.current_bid, state.bought_price, state.fee}
+    {state.spread, calculate_theshold(state), state.position, state.current_ask, state.current_bid, state.last_buy_price, state.fee}
   end
 
   def calculate_theshold(state) do

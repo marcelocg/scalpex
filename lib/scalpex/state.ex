@@ -12,5 +12,6 @@ defmodule Scalpex.State do
             current_ask: -1,
             current_buy_price: 0,
             current_buy_qty: 0,
+            last_buy_price: 0,
             position: :out # possible values are :out, :in, :open_buy, :open_sell            
 end
